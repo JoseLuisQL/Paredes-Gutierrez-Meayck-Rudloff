@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,8 +28,13 @@ public class ctrlPuerta2 : MonoBehaviour
         aSource = gameObject.GetComponent<AudioSource>();
         //particle.Pause();
     }
+    public bool requiresItems = false;
+    
     private void OnTriggerEnter(Collider collision)
     {
+        if (requiresItems && GameManager.Instance != null && GameManager.Instance.itemsCollected < GameManager.Instance.itemsRequired) {
+            return; // No tienes los items
+        }
         tiempoInicio = Time.time;
         abriendo = true;
         cerrando = false;

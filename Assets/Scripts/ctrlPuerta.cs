@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +8,7 @@ public class ctrlPuerta : MonoBehaviour
     bool cerrando = false;
     bool isAbierta = false;
     public Transform puertaPos;
-    //public ParticleSystem particle;
+    public ParticleSystem particle;
     public Vector3 posicionAbierta;
     public Vector3 posicionCerrada;
     public Vector3 posicionFinal;
@@ -26,10 +26,15 @@ public class ctrlPuerta : MonoBehaviour
         posicionFinal = new Vector3(0f, 0f, 4f);
         posicionAbierta = posicionCerrada - posicionFinal;
         aSource = gameObject.GetComponent<AudioSource>();
-        //particle.Pause();
+        if (particle != null) particle.Pause();
     }
+    public bool requiresItems = false;
+    
     private void OnTriggerEnter(Collider collision)
     {
+        if (requiresItems && GameManager.Instance != null && GameManager.Instance.itemsCollected < GameManager.Instance.itemsRequired) {
+            return; // No tienes los items
+        }
         tiempoInicio = Time.time;
         abriendo = true;
         cerrando = false;
@@ -52,9 +57,9 @@ public class ctrlPuerta : MonoBehaviour
     {
         if (abriendo)
         {
-            //particle.Play();
             if (!sound)
             {
+                if (particle != null) particle.Play();
                 aSource.PlayOneShot(aOpen);
                 sound = true;
                 sound2 = false;
@@ -70,10 +75,12 @@ public class ctrlPuerta : MonoBehaviour
         }
         if (cerrando)
         {
-            //particle.Clear();
-            //particle.Pause();
             if (!sound2)
             {
+                if (particle != null) {
+                    particle.Clear();
+                    particle.Pause();
+                }
                 aSource.PlayOneShot(aClose);
                 sound2 = true;
                 sound = false;

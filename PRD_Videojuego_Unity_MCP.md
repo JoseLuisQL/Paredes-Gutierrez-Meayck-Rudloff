@@ -4,6 +4,8 @@
 > Diseñado para ejecutarse con un agente de IA (**Antigravity 2.0**) conectado en tiempo real a Unity mediante el MCP **[IvanMurzak/Unity-MCP — "AI Game Developer: Unity SKILLS, MCP"](https://github.com/IvanMurzak/Unity-MCP)**.
 >
 > **Regla de oro:** el agente NO avanza a la siguiente fase hasta que la **Puerta de Validación (✅ Gate)** de la fase actual pasa al 100%. Cada Gate se verifica con herramientas MCP reales (screenshots, logs, play-mode, tests).
+>
+> **📌 Versión 2 — Actualizado tras `git pull`.** El usuario importó los assets reales del juego (arte, animaciones, scripts base, escenas y prefabs). Este PRD ya NO asume assets genéricos: refleja el **inventario real del repositorio** (ver §0.B) y **reutiliza los scripts existentes** en lugar de reescribirlos. Las fases se reordenaron para *integrar y completar* lo que ya hay.
 
 ---
 
@@ -15,13 +17,91 @@
 | **Render Pipeline** | Universal Render Pipeline (URP `17.4.0`) — perfiles PC y Móvil ya configurados |
 | **Input** | New Input System `1.19.0` (`InputSystem_Actions` ya define Player: Move, Look, Attack, Interact, Crouch, Jump, Sprint + mapa UI) |
 | **Producto** | `Paredes Gutierrez Meayck Rudloff` (v0.1.0) |
-| **Estado actual** | Plantilla *URP Empty*: 1 escena vacía (`SampleScene` → Main Camera, Directional Light, Global Volume). Sin gameplay propio. |
-| **Assets del juego** | **Ya importados por el usuario** (personaje animado, enemigos, zombies, rampas, hangar, props, sonidos). El PRD asume su existencia y se centra en **integración + lógica + escenas**. |
+| **Estado actual** | Assets del juego **importados**: arte (Skeleton, Zombie, armas), escenarios (rampas, esferas), scripts base propios, 3 escenas y prefabs. Falta: encadenar escenas, completar lógica y cumplir cantidades de la rúbrica. |
 | **Orquestador** | Agente IA Antigravity 2.0 |
 | **Puente en tiempo real** | Unity-MCP (OpenUPM `com.ivanmurzak.unity.mcp`), puerto `8080` |
 
 ### ⚠️ Bloqueante crítico detectado (resolver en Fase 0)
-El MCP de Unity **NO funciona si la ruta del proyecto contiene espacios**. El proyecto se llama `Paredes Gutierrez Meayck Rudloff` (con espacios) → **debe copiarse/moverse a una ruta sin espacios** (ej. `ParedesGutierrezMeayckRudloff/`) antes de conectar el MCP. Esto es un requisito duro del bridge stdio.
+El MCP de Unity **NO funciona si la ruta del proyecto contiene espacios**. El proyecto se llama `Paredes Gutierrez Meayck Rudloff` (con espacios) → **debe copiarse/moverse a una ruta sin espacios** (ej. `ParedesGutierrezMeayckRudloff/`) antes de conectar el MCP. Esto es un requisito duro del bridge stdio. **Además** varias carpetas de assets tienen espacios (`Standard Assets`, `Asset Packs`) — son rutas *internas* de assets y no rompen el MCP (solo la raíz del proyecto importa), pero conviene no crear nuevas carpetas con espacios.
+
+---
+
+## 0.B Inventario REAL de assets (verificado en el repo tras `git pull`)
+
+> Tamaño total del repo: ~8.2 MB. Todo esto **ya existe** en `Assets/` — el agente debe **reutilizarlo**, no recrearlo. Localizar con `assets-find` antes de tocar nada.
+
+### 🎭 Personajes y enemigos (arte + animaciones)
+| Recurso | Ruta | Uso previsto |
+|---|---|---|
+| **Skeleton** (FantasyMonster) | `Assets/FantasyMonster/Skeleton/` | Enemigo principal. FBX con animaciones separadas: `Attack, Damage, Death, Idle, Knockback, Run, Skill, Stand, Walk` + `Skeleton@Skin.FBX` (malla) |
+| **Zombie** | `Assets/Asset Packs/Zombie/` | Zombies de la escena Final. `Zombie.prefab`, `Zombie.controller` y clips `attack, idle, walk, fallingback, walk_in_place` |
+| **Enemy** (prefab) | `Assets/Prefabs/Characters/Enemy.prefab` | Enemigo genérico ya montado |
+| **Player** (prefab) | `Assets/Prefabs/Characters/Player.prefab` | Personaje jugable ya montado |
+| **Enemy.controller** | `Assets/Animations/Enemy.controller` | Animator del enemigo con estados **Idle, Move, Attack, Die** (parámetros `idle/move/attack/die`) |
+
+### 🔫 Armas y disparo (FPS)
+| Recurso | Ruta |
+|---|---|
+| Armas (prefabs) | `Assets/Prefabs/Weapons/` → `Pistol`, `Shotgun`, `Carbine` |
+| Malla Carbine | `Assets/Asset Packs/Survival Carbine/` (meshes, materiales, texturas) |
+| Munición/pickups | `Assets/Prefabs/Pickups/` → `Ammo`, `Bullets`, `Rockets`, `Shells`, `Shotgun Shell`, `Bullet` |
+| VFX disparo | `Assets/Prefabs/VFX/Muzzle Flash - Orange.prefab` |
+| Linterna | `Assets/Prefabs/Lights/Flashlight.prefab` |
+
+### 🏗️ Escenarios y props
+| Recurso | Ruta | Uso |
+|---|---|---|
+| **Rampa** | `Assets/Mi_Escenario/Modelos/Rampa.fbx` + `Prefabs/Rampa Variant.prefab` | **Nivel 1 (Rampas)** — duplicar y animar sube/baja |
+| Suelo / Pared | `Assets/Mi_Escenario/Modelos/Suelo_1.fbx`, `Pared_Principal_2.fbx`, `Prefabs/Piso2 Variant.prefab` | Construcción de niveles |
+| Materiales escenario | `Assets/Mi_Escenario/Materiales/` (`Piso`, `caja_1`, `Esfera`, `Pared_computo`) | |
+| **Puerta** | `Assets/Prefabs/Puerta.prefab` | Puerta final del Hangar (usa `ctrlPuerta`/`ctrlPuerta2`) |
+| Standard Assets | `Assets/Standard Assets/` (Cameras, Characters, CrossPlatformInput, Environment, ParticleSystems, Utility) | FPSController, cámaras, **partículas**, waypoints |
+| Prototyping / Water | `Assets/Asset Packs/Standard Assets/` (Prototyping, ParticleSystems, Water) | Materiales y **efectos de partículas** para zona de intercambio |
+| ProGrids | `Assets/ProCore/ProGrids/` | Herramienta de grid (editor) |
+
+### 🔊 Audio
+| Recurso | Ruta |
+|---|---|
+| Efectos | `Assets/audios/` → `shot.mp3`, `door open.mp3`, `door close.mp3` |
+| *(Falta)* | Música de fondo por escena → **conseguir/asignar** (ver Fase 7) |
+
+### 🎬 Escenas existentes
+| Escena | Ruta | Contenido actual | Rol destino |
+|---|---|---|---|
+| `SampleScene` | `Assets/Scenes/SampleScene.unity` | Plantilla (cámara, luz, volume) | Reconvertir a **Splash** o Nivel 1 |
+| `Escenario2` | `Assets/Scenes/Escenario2.unity` | Esferas, `Fin` (trigger de fin), luz | Base para **Nivel 1 / Rampas** |
+| `Sandbox` | `Assets/Scenes/Sandbox.unity` | Jerarquía `Environment / Enemies / Pickups` + `NavMesh.asset` | Base para **Nivel 2 / Hangar** (¡ya tiene NavMesh horneado!) |
+
+### 🧩 Scripts propios existentes (reutilizar — NO reescribir)
+| Script | Qué hace hoy | Estado vs. rúbrica |
+|---|---|---|
+| `controladorPersonaje.cs` | Movimiento CharacterController + salto + **vida (Slider `sldVida`)** + muerte (`death`) | ✅ Base del jugador; falta enganchar animaciones |
+| `controlPersonaje1.cs` | Movimiento simple alterno | Alternativa |
+| `SoldadoControl.cs` / `SoldadoControl2.cs` | Movimiento + **Animator** (`Caminando`, `Corriendo`, `Velocidad`) + rotación con mouse | ✅ Personaje animado (3ª persona) |
+| `controlCamara.cs` | Cámara orbital que sigue al player | ✅ Cámara 3ª persona |
+| `Weapon.cs` | **Disparo por raycast**, decals, daño a "Caja", muzzle | ✅ Ataque a distancia |
+| `DestruirCajas.cs` | Vida/daño de objetos destruibles | ✅ Base para "destruir enemigos" |
+| `DestruirDecal.cs` | Autodestruye decals de bala | ✅ |
+| `ctrlPlayer.cs` | **Contadores coins + points** (TextMeshPro) + trigger `Fin` → menú continuar | ✅ Base del HUD (falta vida/kills/items) |
+| `ctrlCoin.cs` | Ítem recogible → suma coin + sonido + destruye | ✅ Base de **Collectible** |
+| `ctrlPuerta.cs` / `ctrlPuerta2.cs` | Puerta corrediza (Z / X) con sonidos open/close (particle comentado) | ✅ Puerta final; **descomentar partículas** |
+| `death.cs` | Panel de muerte + reiniciar nivel | ✅ |
+| `ContinueMenu.cs` | Panel "continuar" + reiniciar (falta cargar siguiente escena) | ⚠️ Ampliar para **cargar siguiente nivel** |
+| `tecla.cs` / `tocarCancion.cs` | Piano interactivo (teclas con sonido) | ➖ Extra, no requerido por rúbrica |
+
+### 🕳️ BRECHAS vs. la consigna (lo que el agente debe crear/completar)
+| Falta | Dónde se resuelve |
+|---|---|
+| **Escena Splash** ≤ 20 s | Fase 1 |
+| **Encadenar las 4 escenas** en Build Settings + transiciones | Fases 1,3,4,5 + `ContinueMenu` ampliado |
+| **Rampas móviles** (sube/baja) — script `MovingRamp` | Fase 3 |
+| **≥ 10 enemigos** colocados en el Hangar | Fase 4 |
+| **2 ítems** que abren la **puerta final** + **partículas** en zona de intercambio | Fase 4 (usar `ctrlCoin` + `ctrlPuerta` + ParticleSystem de Standard Assets) |
+| **Horda ≥ 5 zombies** con conteo de destruidos → créditos | Fase 5 (Zombie prefab + `DestruirCajas` adaptado) |
+| **HUD completo**: vida + puntos + ítems (x/2) + kills | Fase 6 (ampliar `ctrlPlayer`) |
+| **Animaciones del jugador**: Idle/Run/Attack/Jump enlazadas | Fase 2 (usar `SoldadoControl2` + Animator) |
+| **Música de fondo** por escena | Fase 7 |
+| **Créditos** `Apellido Nombre – NRC` | Fase 5 |
 
 ---
 
@@ -43,38 +123,50 @@ Construir un videojuego 3D en tercera/primera persona con **4 escenas encadenada
 
 ## 2. Arquitectura de escenas (obligatoria)
 
-| # | Escena | Archivo sugerido | Propósito | Requisitos específicos de la consigna |
+| # | Escena | Base existente → archivo | Propósito | Requisitos específicos de la consigna |
 |---|--------|------------------|-----------|----------------------------------------|
-| 0 | **Splash / Inicio** | `Assets/Scenes/00_Splash.unity` | Pantalla de inicio tipo splash | Duración **≤ 20 s**, luego auto-transición al Nivel 1 |
-| 1 | **Nivel 1 — Rampas** | `Assets/Scenes/01_Rampas.unity` | Plataformas/rampas | **Agregar más rampas** al set original + **mecánica de rampas que suben y bajan** (móviles) |
-| 2 | **Nivel 2 — Hangar** | `Assets/Scenes/02_Hangar.unity` | Sigilo/combate | **≥ 10 enemigos** en distintas ubicaciones · recoger **2 ítems** (mostrados en Canvas) → **abre la puerta final** → **zona de intercambio con efectos de partículas** |
-| 3 | **Final — Horda + Créditos** | `Assets/Scenes/03_Final.unity` | Horda | Enemigos que **atacan en horda** · destruir **≥ 5 zombies** → **Canvas de créditos** con `Apellido Nombre – NRC` |
+| 0 | **Splash / Inicio** | *(nueva)* `Assets/Scenes/00_Splash.unity` (o reusar `SampleScene`) | Pantalla de inicio tipo splash | Duración **≤ 20 s**, luego auto-transición al Nivel 1 |
+| 1 | **Nivel 1 — Rampas** | `Escenario2.unity` → `01_Rampas.unity` | Plataformas/rampas | Reusar `Rampa Variant.prefab`; **agregar más rampas** + **mecánica que suben y bajan** (`MovingRamp`) |
+| 2 | **Nivel 2 — Hangar** | `Sandbox.unity` → `02_Hangar.unity` (ya tiene `Environment/Enemies/Pickups` + **NavMesh horneado**) | Sigilo/combate | **≥ 10 enemigos** (Skeleton/Enemy) · **2 ítems** (`ctrlCoin`) en Canvas → **abre `Puerta.prefab`** → **zona de intercambio con partículas** |
+| 3 | **Final — Horda + Créditos** | *(nueva)* `03_Final.unity` | Horda | **Zombies** (`Zombie.prefab`) que atacan en horda · destruir **≥ 5** → **Canvas de créditos** con `Apellido Nombre – NRC` |
 
-> **Build order** (`EditorBuildSettings` vía `scene-open`/`scene-save` + configuración): `00_Splash` → `01_Rampas` → `02_Hangar` → `03_Final`.
+> **Build order** (`EditorBuildSettings`): `00_Splash` → `01_Rampas` → `02_Hangar` → `03_Final`. *(Hoy Build Settings solo tiene `SampleScene` — el agente debe registrar las 4 en orden.)*
+> **Nota:** conservar nombres de escena originales o renombrar; si se renombra, actualizar `ContinueMenu`/`SceneManager.LoadScene`.
 
 ---
 
-## 3. Sistemas transversales (se construyen una vez, se reutilizan)
+## 3. Sistemas: qué REUTILIZAR vs. qué CREAR
 
-Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y compilados con `assets-refresh`.
+> Regla: **primero reutilizar los scripts propios existentes** (§0.B). Solo crear scripts nuevos donde hay una brecha real. Todo con `script-update-or-create` + `assets-refresh`.
 
-| Sistema | Script | Responsabilidad |
+### 3.A Reutilizar / completar (ya existen)
+| Sistema | Script existente | Acción del agente |
 |---|---|---|
-| **GameManager** (singleton, `DontDestroyOnLoad`) | `GameManager.cs` | Estado global: puntos, vida, ítems, enemigos destruidos; carga de escenas por nombre; eventos. |
-| **PlayerController** | `PlayerController.cs` | Movimiento (New Input System), salto, ataque; dispara triggers del Animator. |
-| **PlayerHealth** | `PlayerHealth.cs` | Vida, daño, muerte; notifica al HUD. |
-| **EnemyAI** | `EnemyAI.cs` | Estados Idle/Run/Attack (NavMesh o patrulla simple); daño al jugador; muerte → suma puntos/kills. |
-| **ZombieHorde** | `ZombieHorde.cs` | Spawner de horda para escena Final; cuenta kills ≥ 5. |
-| **Collectible** | `Collectible.cs` | Ítem recogible; incrementa contador; abre puerta al llegar a 2. |
-| **MovingRamp** | `MovingRamp.cs` | Rampa que sube/baja (interpolación entre 2 puntos). |
-| **HUDController** | `HUDController.cs` | Actualiza textos del Canvas: vida / puntos / ítems / kills. |
-| **AudioManager** | `AudioManager.cs` | Música de fondo por escena + SFX (salto, ataque, recoger, muerte). |
-| **SceneFlow** | `SceneFlow.cs` | Splash timer, triggers de fin de nivel, transiciones. |
+| Movimiento + vida jugador | `controladorPersonaje.cs` (tiene `sldVida`, `perderVida`, `death`) | Enganchar parámetros del Animator (Idle/Run/Jump/Attack) |
+| Movimiento 3ª persona animado | `SoldadoControl2.cs` (`Caminando/Corriendo/Velocidad`) | Usar como controlador principal del Player si se quiere 3ª persona |
+| Cámara | `controlCamara.cs` | Asignar `player`/`referencia` |
+| Ataque a distancia | `Weapon.cs` (raycast + decals + daño a tag "Caja") | Extender tag/daño para golpear **enemigos/zombies** |
+| Objeto con vida/daño | `DestruirCajas.cs` | Adaptar a enemigos: al morir → sumar kill/puntos |
+| Ítem recogible | `ctrlCoin.cs` | Usar para los **2 ítems** del Hangar |
+| Puerta | `ctrlPuerta.cs` / `ctrlPuerta2.cs` | Abrir al recoger 2 ítems; **descomentar `ParticleSystem`** |
+| Contadores UI | `ctrlPlayer.cs` (coins + points TMP) | Ampliar a HUD completo (vida + ítems x/2 + kills) |
+| Muerte / reinicio | `death.cs` | OK |
+| Menú continuar | `ContinueMenu.cs` | **Ampliar**: en vez de solo reiniciar, `SceneManager.LoadScene(siguiente)` |
 
-**Animator Controllers** (uno por tipo de agente):
-- `Player.controller`: estados `Idle ⇄ Run`, `Idle → Jump`, `Idle/Run → Attack`; parámetros `Speed (float)`, `Jump (trigger)`, `Attack (trigger)`, `Grounded (bool)`.
-- `Enemy.controller`: `Idle ⇄ Run → Attack`; parámetros `Speed (float)`, `Attack (trigger)`.
-- `Zombie.controller`: reutiliza `Enemy.controller` o variante.
+### 3.B Crear nuevo (brechas)
+| Sistema | Script nuevo | Responsabilidad |
+|---|---|---|
+| **GameManager** (singleton, `DontDestroyOnLoad`) | `GameManager.cs` | Estado global: vida/puntos/ítems/kills; carga de escenas; eventos al HUD |
+| **MovingRamp** | `MovingRamp.cs` | Rampa que sube/baja (Lerp ping-pong entre 2 puntos) |
+| **EnemyAI** | `EnemyAI.cs` | IA Skeleton/Enemy: patrulla/persigue con NavMesh; dispara `Enemy.controller` (Idle/Move/Attack/Die); daña al player; al morir suma kill |
+| **ZombieHorde** | `ZombieHorde.cs` | Spawner de horda (Zombie.prefab); cuenta destruidos ≥ 5 → créditos |
+| **SplashTimer** | `SplashTimer.cs` | Temporizador ≤ 20 s → carga Nivel 1 |
+| **Credits** | `Credits.cs` | Muestra Canvas con `Apellido Nombre – NRC` |
+
+### 3.C Animator Controllers
+- **Player**: crear/ajustar controller con `Idle ⇄ Run`, `→ Jump`, `→ Attack` (parámetros que ya usa `SoldadoControl2`: `Caminando`, `Corriendo`, `Velocidad`; añadir `Jump`/`Attack` triggers). Fuente de clips: FantasyMonster Skeleton o el rig del Player prefab.
+- **Enemy**: `Assets/Animations/Enemy.controller` (ya tiene **Idle/Move/Attack/Die**) — **reutilizar tal cual**.
+- **Zombie**: `Assets/Asset Packs/Zombie/Animations/Zombie.controller` (attack/idle/walk/fallingback) — **reutilizar**.
 
 ---
 
@@ -90,13 +182,19 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 2. Instalar el plugin MCP en Unity: OpenUPM `openupm add com.ivanmurzak.unity.mcp` **o** el `.unitypackage` installer.
 3. En Unity: `Window ▸ AI Game Developer ▸ Auto-generate skills` (o *Configure MCP*). Puerto **8080**.
 4. Configurar Antigravity 2.0 como cliente MCP apuntando a `ai-game-developer` (stdio o `http://localhost:8080`).
-5. Verificar assets importados con `assets-find` (personaje, enemigos, zombies, rampas, hangar, audio).
+5. Verificar assets importados con `assets-find` según el **inventario §0.B**:
+   - Skeleton (`Assets/FantasyMonster/Skeleton/`), Zombie (`Assets/Asset Packs/Zombie/`), prefabs `Player`/`Enemy`.
+   - `Enemy.controller` y `Zombie.controller` (estados de animación).
+   - Rampa (`Assets/Mi_Escenario/`), `Puerta.prefab`, armas y pickups.
+   - Audios (`Assets/audios/shot.mp3`, `door open/close.mp3`).
+   - Escenas `Escenario2`, `Sandbox` (con NavMesh), `SampleScene`.
+   - Scripts propios en `Assets/Scripts/` (confirmar que compilan).
 
 **✅ Gate 0** — *no continuar hasta que TODO pase:*
 - [ ] `editor-application-get-state` responde (Unity accesible por MCP).
 - [ ] Ruta del proyecto **sin espacios** confirmada.
-- [ ] `assets-find` lista los assets clave (modelos animados de personaje + enemigos + zombies + audio + rampas/hangar).
-- [ ] `console-get-logs` sin errores de compilación.
+- [ ] `assets-find` confirma los assets clave del §0.B (Skeleton, Zombie, Rampa, Puerta, armas, audios, escenas).
+- [ ] `console-get-logs` sin errores de compilación (los scripts propios compilan).
 
 ---
 
@@ -120,13 +218,12 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 ### 🛹 FASE 2 — Personaje jugable + Animaciones (núcleo reutilizable)
 **Objetivo:** Personaje con Idle/Run/Attack/Jump controlado por New Input System. *(Se hace en `01_Rampas` y se convierte en Prefab reutilizable.)*
 
-**Tareas**
-- `scene-create` → `01_Rampas.unity`; añadir suelo base.
-- Instanciar el modelo del personaje (`gameobject-create` / `assets-prefab-instantiate`).
-- `gameobject-component-add`: `CharacterController` (o Rigidbody+Capsule), `PlayerInput` (usa `InputSystem_Actions`), `Animator` con `Player.controller`.
-- Crear `Player.controller` con estados y transiciones (parámetros `Speed`, `Jump`, `Attack`, `Grounded`). *(Opcional: paquete AI Animation del MCP para acelerar.)*
-- `script-update-or-create` `PlayerController.cs` + `PlayerHealth.cs`; enlazar acciones Move/Jump/Attack a parámetros del Animator.
-- Convertir a **Prefab**: `assets-prefab-create` → `Assets/Prefabs/Player.prefab`.
+**Tareas** *(reutilizar lo existente — §0.B / §3.A)*
+- Abrir `Escenario2.unity` → guardar como `01_Rampas.unity` (`scene-open` + `scene-save`).
+- Usar el **`Player.prefab` existente** (`assets-prefab-instantiate`); si se opta por 3ª persona, montar `SoldadoControl2.cs` + `controlCamara.cs`; si 1ª persona, FPSController de Standard Assets + `Weapon.cs`.
+- **Animator del Player**: crear/ajustar controller con `Idle ⇄ Run`, `→ Jump`, `→ Attack`. Reusar los parámetros que ya emite `SoldadoControl2` (`Caminando`, `Corriendo`, `Velocidad`) y añadir triggers `Jump`/`Attack`. Clips de FantasyMonster Skeleton o del rig del Player.
+- Enlazar salto/ataque a los triggers del Animator (editar el script existente, no crear uno nuevo salvo necesidad).
+- Guardar cambios en `Player.prefab` (`assets-prefab-save`).
 
 **✅ Gate 2** *(rúbrica: animaciones del personaje)*
 - [ ] En Play: quieto → **Idle**; moverse → **Run**; botón salto → **Jump**; botón ataque → **Attack** (evidencia: 4 `screenshot-game-view` o clip).
@@ -139,11 +236,11 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 **Objetivo:** Completar `01_Rampas` con más rampas y mecánica sube/baja.
 
 **Tareas**
-- Duplicar/añadir rampas (`gameobject-duplicate`) → **más que el set original**.
-- `script-update-or-create` `MovingRamp.cs` (Lerp entre `pointA`/`pointB`, velocidad configurable, ping-pong).
-- Añadir `MovingRamp` a ≥ 2 rampas; colocar `Collider`s.
-- Punta de meta / trigger de fin de nivel (`SceneFlow`) → carga `02_Hangar`.
-- `AudioManager`: música de nivel + SFX de salto.
+- Instanciar/duplicar `Assets/Mi_Escenario/Prefabs/Rampa Variant.prefab` (`assets-prefab-instantiate` + `gameobject-duplicate`) → **más rampas que el set original**.
+- `script-update-or-create` **`MovingRamp.cs`** (Lerp entre `pointA`/`pointB`, velocidad configurable, ping-pong).
+- Añadir `MovingRamp` a ≥ 2 rampas; verificar `Collider`s (usar `Suelo_1`/`Piso2 Variant` como base).
+- Reusar el objeto **`Fin`** (trigger) que ya existe en `Escenario2` → al entrar, `ContinueMenu`/`GameManager` carga `02_Hangar`.
+- Música de nivel + SFX de salto (ver Fase 7).
 
 **✅ Gate 3**
 - [ ] Personaje sube por las rampas y salta entre plataformas (screenshots).
@@ -155,18 +252,18 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 ### 🛩️ FASE 4 — Nivel 2: Hangar (enemigos + ítems + puerta + partículas)
 **Objetivo:** `02_Hangar` con ≥10 enemigos, 2 ítems, puerta que se abre, zona de intercambio con partículas.
 
-**Tareas**
-- `scene-create`/armar `02_Hangar` con el escenario hangar importado.
-- Instanciar **≥ 10 enemigos** en ubicaciones distintas; Prefab `Enemy.prefab` con `Animator (Enemy.controller)` + `EnemyAI.cs` (Idle/Run/Attack, daño al jugador).
-- `Collectible.cs` en **2 ítems**; HUD muestra progreso (0/2 → 2/2).
-- **Puerta final**: cerrada por defecto; `GameManager` la abre al recoger 2 ítems (`gameobject-component-modify` / animación).
-- **Zona de intercambio**: `gameobject-component-add` `ParticleSystem` (efectos visibles). *(Opcional: paquete AI ParticleSystem del MCP.)*
+**Tareas** *(base: `Sandbox.unity`, que ya trae `Environment/Enemies/Pickups` + NavMesh horneado)*
+- Abrir `Sandbox.unity` → guardar como `02_Hangar.unity`.
+- Poblar el grupo **`Enemies`** con **≥ 10 enemigos**: instanciar `Enemy.prefab` o Skeleton (FantasyMonster) en ubicaciones distintas; asignar `Enemy.controller` (Idle/Move/Attack/Die) + `EnemyAI.cs` (nuevo) usando el **NavMesh ya horneado**.
+- Colocar **2 ítems** con `ctrlCoin.cs` en el grupo `Pickups`; el HUD muestra progreso (0/2 → 2/2).
+- **Puerta final** (`Puerta.prefab` + `ctrlPuerta`/`ctrlPuerta2`): cerrada por defecto; `GameManager` la habilita al recoger 2 ítems.
+- **Zona de intercambio**: instanciar un `ParticleSystem` de `Assets/Asset Packs/Standard Assets/ParticleSystems/` **y** descomentar el `particle.Play()` en `ctrlPuerta`.
 - Trigger tras la puerta → carga `03_Final`.
 
 **✅ Gate 4** *(rúbrica: panel de puntos, ítems, adversarios)*
 - [ ] `gameobject-find` confirma **≥ 10** enemigos en la escena.
-- [ ] Enemigos animan Idle/Run/Attack y persiguen/atacan (screenshots).
-- [ ] Recoger 2 ítems → HUD 2/2 → **puerta se abre** (evidencia visual).
+- [ ] Enemigos animan Idle/Move/Attack/Die y persiguen/atacan (screenshots).
+- [ ] Recoger 2 ítems → HUD 2/2 → **la puerta se abre** (evidencia visual).
 - [ ] Zona de intercambio muestra **partículas** activas.
 - [ ] Transición a Final sin errores.
 
@@ -176,10 +273,11 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 **Objetivo:** `03_Final` con horda de zombies (destruir ≥ 5) → Canvas de créditos.
 
 **Tareas**
-- Armar `03_Final`; `ZombieHorde.cs` spawnea zombies que **atacan en horda** (`Zombie.controller`).
-- Combate: ataque del jugador destruye zombies; `GameManager` cuenta kills; al llegar a **≥ 5** → dispara créditos.
-- **Canvas de créditos**: por integrante `Apellido Nombre – NRC` (completar datos reales del equipo).
-- `AudioManager`: música final / créditos.
+- `scene-create` → `03_Final.unity`; suelo base (Prototyping) + hornear NavMesh si se usa.
+- `ZombieHorde.cs` (nuevo) spawnea **`Assets/Asset Packs/Zombie/Prefabs/Zombie.prefab`** en horda; `Zombie.controller` da idle/walk/attack/fallingback.
+- Combate: `Weapon.cs` (o ataque) destruye zombies vía `DestruirCajas` adaptado (tag `Zombie`); `GameManager` cuenta kills; al llegar a **≥ 5** → dispara créditos.
+- **Canvas de créditos** (`Credits.cs`): por integrante `Apellido Nombre – NRC` (datos reales — §7).
+- Música final / créditos (ver Fase 7).
 
 **✅ Gate 5** *(rúbrica: niveles → créditos finales)*
 - [ ] Zombies aparecen en horda y atacan (screenshots).
@@ -191,10 +289,10 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 ### 🎛️ FASE 6 — HUD (panel de puntos) global
 **Objetivo:** Panel único y coherente en todas las escenas jugables.
 
-**Tareas**
-- `HUDController.cs` + Canvas persistente (o instanciado por escena) mostrando **Vida · Puntos · Ítems (x/2) · Enemigos destruidos**.
+**Tareas** *(ampliar lo que ya hace `ctrlPlayer.cs`)*
+- Partir de `ctrlPlayer.cs` (ya muestra coins + points con TextMeshPro) y **añadir**: barra de **Vida** (Slider `sldVida` que ya usa `controladorPersonaje`), **Ítems (x/2)** y **Enemigos destruidos**.
+- Usar `Assets/Prefabs/UI/UI.prefab` como Canvas base si aplica.
 - Suscribir el HUD a eventos del `GameManager` (actualización en tiempo real).
-- Barra/valor de vida enlazada a `PlayerHealth`.
 
 **✅ Gate 6** *(rúbrica: panel de puntos)*
 - [ ] HUD visible en Niveles 1, 2 y Final.
@@ -206,8 +304,9 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 **Objetivo:** Sonido completo y coherente.
 
 **Tareas**
-- `AudioManager.cs`: música de fondo por escena (loop) + SFX: salto, ataque, recoger ítem, daño, muerte enemigo, apertura de puerta.
-- Enlazar SFX a eventos (Animator events o llamadas desde scripts).
+- **SFX ya disponibles** en `Assets/audios/`: `shot.mp3` (disparo → `Weapon`), `door open.mp3`/`door close.mp3` (→ `ctrlPuerta`, ya cableados). `ctrlCoin` ya reproduce sonido al recoger.
+- **Falta música de fondo por escena** (loop) → conseguir/importar clips y asignar un `AudioSource` de fondo por escena (o vía `GameManager`).
+- Añadir SFX faltantes: salto, daño al jugador, muerte de enemigo (Animator events o llamadas desde scripts).
 
 **✅ Gate 7** *(rúbrica: sonido)*
 - [ ] Música de fondo suena en cada escena.
@@ -262,9 +361,10 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 
 ## 7. Datos que el agente debe pedir antes de empezar (placeholders)
 
-- [ ] **Integrantes + NRC** para créditos: `Apellido Nombre – NRC` (×N).
-- [ ] Rutas exactas de los assets importados (personaje, enemigos, zombies, rampas, hangar, clips de audio).
-- [ ] ¿Tercera o primera persona? (por defecto: tercera persona).
+- [ ] **Integrantes + NRC** para créditos: `Apellido Nombre – NRC` (×N). *(único dato que el repo NO tiene).*
+- [ ] ¿Personaje jugable en **1ª persona** (FPSController + `Weapon.cs`) o **3ª persona** (`SoldadoControl2` + `controlCamara`)? El repo soporta ambos.
+- [ ] ¿Enemigo principal = **Skeleton** (FantasyMonster) o el **Enemy.prefab** genérico? (Zombies quedan para la escena Final).
+- [ ] Música de fondo: ¿tienes clips o el agente debe conseguir libres de derechos?
 - [ ] Plataforma objetivo del build (PC por defecto; hay perfil Móvil URP disponible).
 
 ---
@@ -286,14 +386,21 @@ Todos como scripts en `Assets/Scripts/` creados con `script-update-or-create` y 
 
 ```
 Assets/
-├─ Scenes/           00_Splash · 01_Rampas · 02_Hangar · 03_Final
-├─ Scripts/          GameManager, PlayerController, PlayerHealth, EnemyAI,
-│                    ZombieHorde, Collectible, MovingRamp, HUDController,
-│                    AudioManager, SceneFlow
-├─ Prefabs/          Player, Enemy, Zombie, Collectible, MovingRamp, HUD
-├─ Animators/        Player.controller, Enemy.controller, Zombie.controller
-├─ Audio/            music/*, sfx/*
-└─ (assets importados del usuario)
+├─ Scenes/              SampleScene · Escenario2(→01_Rampas) · Sandbox(→02_Hangar) · (03_Final nuevo)
+├─ Scripts/             [EXISTEN] controladorPersonaje, SoldadoControl(2), controlCamara,
+│                       Weapon, DestruirCajas/Decal, ctrlPlayer, ctrlCoin, ctrlPuerta(2),
+│                       death, ContinueMenu, tecla, tocarCancion
+│                       [NUEVOS] GameManager, MovingRamp, EnemyAI, ZombieHorde,
+│                       SplashTimer, Credits
+├─ Animations/          Enemy.controller (Idle/Move/Attack/Die)
+├─ FantasyMonster/      Skeleton (Idle/Run/Attack/Death/… FBX)
+├─ Asset Packs/Zombie/  Zombie.prefab + Zombie.controller
+├─ Asset Packs/Survival Carbine/, Prefabs/Weapons/, Prefabs/Pickups/   (armas + munición)
+├─ Mi_Escenario/        Rampa, Suelo, Pared + prefabs Variant
+├─ Prefabs/             Characters/{Player,Enemy}, Puerta, UI, VFX, Lights
+├─ Standard Assets/     Cameras, Characters(FPS), CrossPlatformInput, ParticleSystems, Utility
+├─ audios/              shot.mp3, door open/close.mp3   (falta música de fondo)
+└─ Settings/, Materials/, ProCore/
 ```
 
 ---
@@ -325,10 +432,19 @@ puerto 8080). Vas a construir un videojuego 3D completo siguiendo el archivo
 PRD_Videojuego_Unity_MCP.md que te adjunto, fase por fase.
 
 CONTEXTO:
-- Unity 6000.4.9f1, URP 17.4.0, New Input System (InputSystem_Actions ya define
-  Player: Move/Look/Attack/Interact/Crouch/Jump/Sprint + mapa UI).
-- Los assets del juego (personaje animado, enemigos, zombies, rampas, hangar,
-  audio) YA están importados. Localízalos con `assets-find` antes de crear nada.
+- Unity 6000.4.9f1, URP 17.4.0, New Input System (aunque los scripts existentes
+  usan el Input clásico Input.GetAxis — respétalo, no lo migres sin pedir permiso).
+- Los assets del juego YA están importados. Consulta el INVENTARIO REAL en la
+  sección §0.B del PRD y reutilízalo. Piezas clave:
+    · Enemigo: Assets/FantasyMonster/Skeleton/ (+ Assets/Animations/Enemy.controller)
+    · Zombies: Assets/Asset Packs/Zombie/ (Zombie.prefab + Zombie.controller)
+    · Jugador: Assets/Prefabs/Characters/Player.prefab
+    · Rampa:  Assets/Mi_Escenario/Prefabs/Rampa Variant.prefab
+    · Puerta: Assets/Prefabs/Puerta.prefab (scripts ctrlPuerta/ctrlPuerta2)
+    · Armas:  Assets/Prefabs/Weapons/ + Weapon.cs
+    · Audios: Assets/audios/ (shot, door open/close)
+    · Escenas: Escenario2 (→Nivel1), Sandbox (→Nivel2, con NavMesh horneado)
+    · Scripts propios en Assets/Scripts/ (ver §0.B — REUTILÍZALOS)
 - El proyecto DEBE estar en una ruta sin espacios (requisito del MCP).
 
 REGLAS ESTRICTAS:
@@ -336,22 +452,26 @@ REGLAS ESTRICTAS:
 2. NO avances a la siguiente fase hasta pasar su "✅ Gate" al 100%.
 3. Para CADA Gate presenta evidencia: al menos un `screenshot-game-view`
    (o `screenshot-scene-view`) y un `console-get-logs` SIN errores rojos.
-4. Antes de crear assets, verifícalos con `assets-find`. Si falta un asset
-   crítico, DETENTE y pídemelo — no lo simules ni lo inventes.
-5. Reutiliza Prefabs y sistemas (GameManager, Player, Enemy, HUD, AudioManager
-   son singletons/prefabs). No dupliques lógica.
-6. Escribe el código de producción con `script-update-or-create` (+`assets-refresh`),
+4. REUTILIZA lo existente antes de crear. Lee el script con `script-read`,
+   extiéndelo con `script-update-or-create`. Solo crea scripts nuevos para las
+   BRECHAS listadas en §0.B (GameManager, MovingRamp, EnemyAI, ZombieHorde,
+   SplashTimer, Credits). No reescribas ni dupliques lógica que ya funciona.
+5. Antes de instanciar, verifica el asset con `assets-find`. Si falta algo
+   crítico, DETENTE y pídemelo — no lo inventes.
+6. Código de producción con `script-update-or-create` (+`assets-refresh`),
    no con `script-execute`.
 7. Al final de cada fase, dame un resumen: qué hiciste, evidencia del Gate,
    y qué sigue. Espera mi "OK" o corrige si el Gate falla.
 
 DATOS QUE NECESITO DE TI ANTES DE EMPEZAR (pregúntame en la Fase 0):
 - Integrantes y NRC para los créditos (formato: "Apellido Nombre – NRC").
-- Rutas exactas de los assets importados.
-- Cámara: ¿tercera o primera persona? (por defecto tercera).
+- ¿Jugador en 1ª persona (FPS + Weapon.cs) o 3ª persona (SoldadoControl2 + controlCamara)?
+- ¿Enemigo principal Skeleton o Enemy.prefab? (los zombies son para la escena Final).
+- ¿Tienes música de fondo o la consigo libre de derechos?
 
 Empieza por la FASE 0: verifica la conexión MCP con `editor-application-get-state`,
-confirma que la ruta no tiene espacios, lista los assets clave con `assets-find`,
+confirma que la ruta no tiene espacios, valida el inventario §0.B con `assets-find`,
+comprueba que los scripts de Assets/Scripts/ compilan (`console-get-logs`),
 y reporta el Gate 0. No sigas sin mi confirmación.
 ```
 
@@ -373,4 +493,4 @@ y reporta el Gate 0. No sigas sin mi confirmación.
 
 ---
 
-*Fin del PRD. Ejecutar con Antigravity 2.0 + Unity-MCP, fase por fase, validando cada Gate.*
+*Fin del PRD (v2 — sincronizado con el repo tras `git pull`). Ejecutar con Antigravity 2.0 + Unity-MCP, fase por fase, validando cada Gate. Los assets del §0.B son reales y verificados; reutilízalos.*
